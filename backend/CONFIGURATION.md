@@ -21,7 +21,7 @@ The application uses environment variables for configuration, loaded through Pyd
 | `OLLAMA_MODEL` | `llama3` | Model name to use for chat |
 
 ### PostgreSQL Configuration
-
+init_db.py
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `POSTGRES_HOST` | `postgres` | PostgreSQL hostname |
