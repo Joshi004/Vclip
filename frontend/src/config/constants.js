@@ -9,6 +9,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 export const API_ENDPOINTS = {
   HEALTH: '/health',
   CHAT: '/chat',
+  SESSIONS: '/sessions',
 };
 
 // UI Constants
@@ -22,5 +23,11 @@ export const UI_CONSTANTS = {
 export const MESSAGE_ROLES = {
   USER: 'user',
   ASSISTANT: 'assistant',
+};
+
+// Storage keys
+export const STORAGE_KEYS = {
+  SESSION_ID: 'chatbot_session_id',
+  SHOW_CONTEXT: 'chatbot_show_context',
 };
 
