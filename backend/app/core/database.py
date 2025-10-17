@@ -150,9 +150,11 @@ def check_db_health() -> bool:
         True if database is accessible, False otherwise
     """
     try:
+        from sqlalchemy import text
+        
         with db_manager.session_scope() as session:
             # Simple query to check connection
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
         return True
     except Exception as e:
         logger.error(f"Database health check failed: {e}")

@@ -48,21 +48,30 @@ class ChatHistoryService:
             RuntimeError: If session creation fails
         """
         try:
+            new_session_id = uuid.uuid4()
+            now = datetime.utcnow()
+            
             with db_manager.session_scope() as db:
                 # Create new session
                 session = ChatSession(
-                    session_id=uuid.uuid4(),
+                    session_id=new_session_id,
                     user_id=user_id,
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow()
+                    created_at=now,
+                    updated_at=now
                 )
                 
                 db.add(session)
                 db.commit()
-                db.refresh(session)
                 
-                logger.info(f"Created new session: {session.session_id}")
-                return session
+                logger.info(f"Created new session: {new_session_id}")
+                
+            # Return a new session object (detached from session)
+            return ChatSession(
+                session_id=new_session_id,
+                user_id=user_id,
+                created_at=now,
+                updated_at=now
+            )
                 
         except Exception as e:
             logger.error(f"Failed to create session: {e}")
@@ -87,7 +96,16 @@ class ChatHistoryService:
                     ChatSession.session_id == session_id
                 ).first()
                 
-                return session
+                if not session:
+                    return None
+                
+                # Return detached session object
+                return ChatSession(
+                    session_id=session.session_id,
+                    user_id=session.user_id,
+                    created_at=session.created_at,
+                    updated_at=session.updated_at
+                )
                 
         except Exception as e:
             logger.error(f"Failed to get session: {e}")
@@ -143,12 +161,15 @@ class ChatHistoryService:
         """
         try:
             # 1. Save to PostgreSQL first
+            timestamp = datetime.utcnow()
+            message_id = None
+            
             with db_manager.session_scope() as db:
                 message = ChatMessage(
                     session_id=session_id,
                     role=role,
                     content=content,
-                    timestamp=datetime.utcnow(),
+                    timestamp=timestamp,
                     vector_id=None  # Will update after Qdrant storage
                 )
                 
@@ -178,7 +199,7 @@ class ChatHistoryService:
                         role=role,
                         content=content,
                         embedding=embedding,
-                        timestamp=message.timestamp
+                        timestamp=timestamp
                     )
                     
                     # Update PostgreSQL with vector_id
@@ -205,7 +226,17 @@ class ChatHistoryService:
             # 3. Update session timestamp
             self._update_session_timestamp(session_id)
             
-            return message, point_id
+            # Create detached message object to return
+            detached_message = ChatMessage(
+                id=message_id,
+                session_id=session_id,
+                role=role,
+                content=content,
+                timestamp=timestamp,
+                vector_id=point_id
+            )
+            
+            return detached_message, point_id
             
         except Exception as e:
             logger.error(f"Failed to save message: {e}")
@@ -288,7 +319,19 @@ class ChatHistoryService:
                 
                 messages = query.all()
                 
-                return messages
+                # Return detached message objects
+                detached_messages = []
+                for msg in messages:
+                    detached_messages.append(ChatMessage(
+                        id=msg.id,
+                        session_id=msg.session_id,
+                        role=msg.role,
+                        content=msg.content,
+                        timestamp=msg.timestamp,
+                        vector_id=msg.vector_id
+                    ))
+                
+                return detached_messages
                 
         except Exception as e:
             logger.error(f"Failed to get session messages: {e}")

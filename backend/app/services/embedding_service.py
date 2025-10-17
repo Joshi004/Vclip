@@ -34,9 +34,8 @@ class EmbeddingService:
     
     def __init__(self):
         """Initialize the embedding service (called on first access)."""
-        # Only initialize once
-        if not self._initialized:
-            self._initialize_model()
+        # Lazy initialization - model loaded on first use
+        pass
     
     def _initialize_model(self):
         """
@@ -99,7 +98,7 @@ class EmbeddingService:
             ValueError: If text is empty
         """
         if self._model is None:
-            raise RuntimeError("Embedding model not initialized")
+            self._initialize_model()
         
         if not text or not text.strip():
             raise ValueError("Cannot generate embedding for empty text")
@@ -144,7 +143,7 @@ class EmbeddingService:
             ValueError: If texts list is empty
         """
         if self._model is None:
-            raise RuntimeError("Embedding model not initialized")
+            self._initialize_model()
         
         if not texts:
             raise ValueError("Cannot generate embeddings for empty list")
